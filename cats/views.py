@@ -1,16 +1,26 @@
 from rest_framework import viewsets
+from rest_framework import permissions
 
 from .models import Achievement, Cat, User
-
+from .permissions import OwnerOrReadOnly, ReadOnly
 from .serializers import AchievementSerializer, CatSerializer, UserSerializer
 
 
 class CatViewSet(viewsets.ModelViewSet):
     queryset = Cat.objects.all()
     serializer_class = CatSerializer
+    permission_classes = (OwnerOrReadOnly, )
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user) 
+        serializer.save(owner=self.request.user)
+
+    def get_permissions(self):
+        '''Теперь при GET-запросе информации о конкретном котике доступ будет
+        определяться пермишеном ReadOnly: запросы будут разрешены всем. При
+        остальных запросах доступ будет определять пермишен OwnerOrReadOnly.'''
+        if self.action == 'retrieve':
+            return (ReadOnly(), )
+        return super().get_permissions()
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
